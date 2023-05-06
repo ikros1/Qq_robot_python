@@ -92,6 +92,8 @@ def send_file_in_japanese_to_group(from_group, chinese_txt, tts_core):
         txt_str = chinese_txt.replace(" ", "").replace("\n", "")
     speaker = os.getenv("TTS_SPEAKER")
     speed = os.getenv("TTS_SPEED")
+    # 将speed转换为float
+    speed = float(speed)
     tts_front_path = os.getenv("TTS_FRONT_PATH")
     front_path = "data/voices/"
     # 通过时间戳赋予随机名字
@@ -99,6 +101,7 @@ def send_file_in_japanese_to_group(from_group, chinese_txt, tts_core):
     file_back = ".wav"
     file_name_all = tts_front_path + front_path + file_name + file_back
     send_file_name_all = file_name + file_back
+    # print(txt_str, speaker, language, speed, file_name_all)
     tts_core.tts_vo(text=txt_str, speaker=speaker, language=language, speed=speed, file_path=file_name_all)
     send_record_to_group(from_group=from_group, file_path=send_file_name_all)
 

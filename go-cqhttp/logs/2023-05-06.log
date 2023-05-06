@@ -284,3 +284,6 @@
 [2023-05-06 15:06:53] [WARNING]: 上报 Event 数据到 http://localhost:8232/hello-robot 失败: Post "http://localhost:8232/hello-robot": dial tcp [::1]:8232: connectex: No connection could be made because the target machine actively refused it. 将进行第 3 次重试 
 [2023-05-06 15:06:56] [WARNING]: 上报 Event 数据 {"post_type":"message","message_type":"group","time":1683356804,"self_id":3268645847,"sub_type":"normal","group_id":209520098,"message":[{"type":"text","data":{"text":"有人有天降的漫画资源么"}}],"message_seq":28394,"sender":{"age":0,"area":"","card":"","level":"","nickname":"style","role":"member","sex":"unknown","title":"","user_id":1127276102},"anonymous":null,"font":0,"raw_message":"有人有天降的漫画资源么","user_id":1127276102,"message_id":2144988434}
  到 http://localhost:8232/hello-robot 失败: Post "http://localhost:8232/hello-robot": dial tcp [::1]:8232: connectex: No connection could be made because the target machine actively refused it. 停止上报：已达重试上限 
+[2023-05-06 16:59:35] [WARNING]: Protocol -> device lock is disable. http api may fail. 
+[2023-05-06 16:59:44] [WARNING]: 检查协议更新失败: Get "https://ghproxy.com/https://raw.githubusercontent.com/RomiChan/protocol-versions/master/android_pad.json": context deadline exceeded (Client.Timeout exceeded while awaiting headers) 
+[2023-05-06 16:59:45] [WARNING]: 警告: 心跳功能已关闭，若非预期，请检查配置文件。 
