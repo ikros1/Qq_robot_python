@@ -1,0 +1,12 @@
+#python_qq_robot项目简介
+运行需要项目目录下的cq_http,需要自己配置yml,并且需要在开启主要的服务时候开启cq_http
+自己创建.env文件，例子在根目录文件夹下的.env.example
+
+建立好虚拟环境配置好requirements.txt后运行start.py就可以了
+#关于语音合成部分
+语音合成使用的是vits，现有的模型有许多音源，说话人语言语速可在env中配置
+如果要使用自己的模型，需要在env中配置自己的模型参数，并更换根目录下的G_latest.pth和finetune_speaker.json
+
+##注意，该项目联网查询功能需要大量openai的api，注意自己的额度
+##注意，该项目联网查询功能需要大量的google_search的api，注意自己的免费额度和接口情况
+##语音合成比较吃显卡和cpu，不建议配置过低运行

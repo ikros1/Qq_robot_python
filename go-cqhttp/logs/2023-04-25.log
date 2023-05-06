@@ -1,0 +1,12 @@
+[2023-04-25 17:03:41] [WARNING]: Protocol -> device lock is disable. http api may fail. 
+[2023-04-25 17:03:48] [WARNING]: 警告: 心跳功能已关闭，若非预期，请检查配置文件。 
+[2023-04-25 17:04:56] [WARNING]: 上报 Event 数据到 http://localhost:8232/Qq_robot-1.0-SNAPSHOT/hello-robot 失败: Post "http://localhost:8232/Qq_robot-1.0-SNAPSHOT/hello-robot": dial tcp [::1]:8232: connectex: No connection could be made because the target machine actively refused it. 将进行第 1 次重试 
+[2023-04-25 17:05:00] [WARNING]: 上报 Event 数据到 http://localhost:8232/Qq_robot-1.0-SNAPSHOT/hello-robot 失败: Post "http://localhost:8232/Qq_robot-1.0-SNAPSHOT/hello-robot": dial tcp [::1]:8232: connectex: No connection could be made because the target machine actively refused it. 将进行第 2 次重试 
+[2023-04-25 17:06:21] [WARNING]: Protocol -> device lock is disable. http api may fail. 
+[2023-04-25 17:06:27] [WARNING]: 警告: 心跳功能已关闭，若非预期，请检查配置文件。 
+[2023-04-25 17:07:59] [WARNING]: Protocol -> device lock is disable. http api may fail. 
+[2023-04-25 17:08:05] [WARNING]: 警告: 心跳功能已关闭，若非预期，请检查配置文件。 
+[2023-04-25 17:16:26] [WARNING]: Protocol -> device lock is disable. http api may fail. 
+[2023-04-25 17:16:33] [WARNING]: 警告: 心跳功能已关闭，若非预期，请检查配置文件。 
+[2023-04-25 18:58:58] [WARNING]: Protocol -> device lock is disable. http api may fail. 
+[2023-04-25 18:59:05] [WARNING]: 警告: 心跳功能已关闭，若非预期，请检查配置文件。 

@@ -1,0 +1,89 @@
+2023-05-05 16:28:26,836 INFO [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8232
+ * Running on http://172.41.168.130:8232
+2023-05-05 16:28:26,836 INFO [33mPress CTRL+C to quit[0m
+2023-05-05 16:29:24,515 INFO 127.0.0.1 - - [05/May/2023 16:29:24] "POST /hello-robot HTTP/1.1" 200 -
+2023-05-05 16:29:30,235 DEBUG subprocess.call(['ffmpeg', '-y', '-f', 'amr', '-i', 'file/voice/1683275364.amr', '-acodec', 'pcm_s32le', '-vn', '-f', 'wav', '-'])
+2023-05-05 16:29:30,260 DEBUG subprocess.call(['ffmpeg', '-y', '-f', 'wav', '-i', 'C:\\Users\\ikaros\\AppData\\Local\\Temp\\tmprbqnkj18', '-f', 'mp3', 'C:\\Users\\ikaros\\AppData\\Local\\Temp\\tmps8y6mpq0'])
+2023-05-05 16:29:30,288 DEBUG subprocess.call(['ffmpeg', '-y', '-f', 'amr', '-i', 'file/voice/1683275364.amr', '-acodec', 'pcm_s32le', '-vn', '-f', 'wav', '-'])
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'ffmpeg version N-107449-g636a629ff6-20220720 Copyright (c) 2000-2022 the FFmpeg developers'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  built with gcc 12.1.0 (crosstool-NG 1.25.0.55_3defb7b)'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  configuration: --prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32 --enable-gpl --enable-version3 --disable-debug --disable-w32threads --enable-pthreads --enable-iconv --enable-libxml2 --enable-zlib --enable-libfreetype --enable-libfribidi --enable-gmp --enable-lzma --enable-fontconfig --enable-libvorbis --enable-opencl --disable-libpulse --enable-libvmaf --disable-libxcb --disable-xlib --enable-amf --enable-libaom --enable-libaribb24 --enable-avisynth --enable-libdav1d --enable-libdavs2 --disable-libfdk-aac --enable-ffnvcodec --enable-cuda-llvm --enable-frei0r --enable-libgme --enable-libass --enable-libbluray --enable-libjxl --enable-libmp3lame --enable-libopus --enable-librist --enable-libtheora --enable-libvpx --enable-libwebp --enable-lv2 --enable-libmfx --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenjpeg --enable-libopenmpt --enable-librav1e --enable-librubberband --enable-schannel --enable-sdl2 --enable-libsoxr --enable-libsrt --enable-libsvtav1 --enable-libtwolame --enable-libuavs3d --disable-libdrm --disable-vaapi --enable-libvidstab --enable-vulkan --enable-libshaderc --enable-libplacebo --enable-libx264 --enable-libx265 --enable-libxavs2 --enable-libxvid --enable-libzimg --enable-libzvbi --extra-cflags=-DLIBTWOLAME_STATIC --extra-cxxflags= --extra-ldflags=-pthread --extra-ldexeflags= --extra-libs=-lgomp --extra-version=20220720'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  libavutil      57. 30.100 / 57. 30.100'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  libavcodec     59. 39.100 / 59. 39.100'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  libavformat    59. 29.100 / 59. 29.100'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  libavdevice    59.  8.101 / 59.  8.101'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  libavfilter     8. 46.100 /  8. 46.100'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  libswscale      6.  8.101 /  6.  8.101'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  libswresample   4.  8.100 /  4.  8.100'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  libpostproc    56.  7.100 / 56.  7.100'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'Guessed Channel Layout for Input Stream #0.0 : mono'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b"Input #0, wav, from 'C:\\Users\\ikaros\\AppData\\Local\\Temp\\tmprbqnkj18':"
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  Duration: 00:00:02.50, bitrate: 256 kb/s'
+2023-05-05 16:29:30,289 DEBUG subprocess output: b'  Stream #0:0: Audio: pcm_s32le ([1][0][0][0] / 0x0001), 8000 Hz, mono, s32, 256 kb/s'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'Stream mapping:'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'  Stream #0:0 -> #0:0 (pcm_s32le (native) -> mp3 (libmp3lame))'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'Press [q] to stop, [?] for help'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b"Output #0, mp3, to 'C:\\Users\\ikaros\\AppData\\Local\\Temp\\tmps8y6mpq0':"
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'  Metadata:'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'    TSSE            : Lavf59.29.100'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'  Stream #0:0: Audio: mp3, 8000 Hz, mono, s32p'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'    Metadata:'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'      encoder         : Lavc59.39.100 libmp3lame'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'size=       0kB time=00:00:00.00 bitrate=N/A speed=   0x'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'size=       3kB time=00:00:02.52 bitrate=   9.3kbits/s speed= 304x'
+2023-05-05 16:29:30,290 DEBUG subprocess output: b'video:0kB audio:3kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 9.797297%'
+2023-05-05 16:29:30,316 DEBUG subprocess.call(['ffmpeg', '-y', '-f', 'wav', '-i', 'C:\\Users\\ikaros\\AppData\\Local\\Temp\\tmp5ibdi6y_', '-f', 'mp3', 'C:\\Users\\ikaros\\AppData\\Local\\Temp\\tmpdxryfjd0'])
+2023-05-05 16:29:30,341 DEBUG subprocess output: b'ffmpeg version N-107449-g636a629ff6-20220720 Copyright (c) 2000-2022 the FFmpeg developers'
+2023-05-05 16:29:30,341 DEBUG subprocess output: b'  built with gcc 12.1.0 (crosstool-NG 1.25.0.55_3defb7b)'
+2023-05-05 16:29:30,341 DEBUG subprocess output: b'  configuration: --prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32 --enable-gpl --enable-version3 --disable-debug --disable-w32threads --enable-pthreads --enable-iconv --enable-libxml2 --enable-zlib --enable-libfreetype --enable-libfribidi --enable-gmp --enable-lzma --enable-fontconfig --enable-libvorbis --enable-opencl --disable-libpulse --enable-libvmaf --disable-libxcb --disable-xlib --enable-amf --enable-libaom --enable-libaribb24 --enable-avisynth --enable-libdav1d --enable-libdavs2 --disable-libfdk-aac --enable-ffnvcodec --enable-cuda-llvm --enable-frei0r --enable-libgme --enable-libass --enable-libbluray --enable-libjxl --enable-libmp3lame --enable-libopus --enable-librist --enable-libtheora --enable-libvpx --enable-libwebp --enable-lv2 --enable-libmfx --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenjpeg --enable-libopenmpt --enable-librav1e --enable-librubberband --enable-schannel --enable-sdl2 --enable-libsoxr --enable-libsrt --enable-libsvtav1 --enable-libtwolame --enable-libuavs3d --disable-libdrm --disable-vaapi --enable-libvidstab --enable-vulkan --enable-libshaderc --enable-libplacebo --enable-libx264 --enable-libx265 --enable-libxavs2 --enable-libxvid --enable-libzimg --enable-libzvbi --extra-cflags=-DLIBTWOLAME_STATIC --extra-cxxflags= --extra-ldflags=-pthread --extra-ldexeflags= --extra-libs=-lgomp --extra-version=20220720'
+2023-05-05 16:29:30,341 DEBUG subprocess output: b'  libavutil      57. 30.100 / 57. 30.100'
+2023-05-05 16:29:30,341 DEBUG subprocess output: b'  libavcodec     59. 39.100 / 59. 39.100'
+2023-05-05 16:29:30,341 DEBUG subprocess output: b'  libavformat    59. 29.100 / 59. 29.100'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'  libavdevice    59.  8.101 / 59.  8.101'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'  libavfilter     8. 46.100 /  8. 46.100'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'  libswscale      6.  8.101 /  6.  8.101'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'  libswresample   4.  8.100 /  4.  8.100'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'  libpostproc    56.  7.100 / 56.  7.100'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'Guessed Channel Layout for Input Stream #0.0 : mono'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b"Input #0, wav, from 'C:\\Users\\ikaros\\AppData\\Local\\Temp\\tmp5ibdi6y_':"
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'  Duration: 00:00:02.50, bitrate: 256 kb/s'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'  Stream #0:0: Audio: pcm_s32le ([1][0][0][0] / 0x0001), 8000 Hz, mono, s32, 256 kb/s'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'Stream mapping:'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'  Stream #0:0 -> #0:0 (pcm_s32le (native) -> mp3 (libmp3lame))'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'Press [q] to stop, [?] for help'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b"Output #0, mp3, to 'C:\\Users\\ikaros\\AppData\\Local\\Temp\\tmpdxryfjd0':"
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'  Metadata:'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'    TSSE            : Lavf59.29.100'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'  Stream #0:0: Audio: mp3, 8000 Hz, mono, s32p'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'    Metadata:'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'      encoder         : Lavc59.39.100 libmp3lame'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'size=       0kB time=00:00:00.00 bitrate=N/A speed=   0x'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'size=       3kB time=00:00:02.52 bitrate=   9.3kbits/s speed= 337x'
+2023-05-05 16:29:30,342 DEBUG subprocess output: b'video:0kB audio:3kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 9.797297%'
+2023-05-05 16:29:30,343 DEBUG message='Request to OpenAI API' method=post path=https://api.openai.com/v1/audio/transcriptions
+2023-05-05 16:29:30,343 DEBUG api_version=None data="{'model': 'whisper-1'}" message='Post details'
+2023-05-05 16:29:30,344 DEBUG Converted retries value: 2 -> Retry(total=2, connect=None, read=None, redirect=None, status=None)
+2023-05-05 16:29:30,345 DEBUG Starting new HTTPS connection (1): api.openai.com:443
+2023-05-05 16:29:32,747 DEBUG https://api.openai.com:443 "POST /v1/audio/transcriptions HTTP/1.1" 200 29
+2023-05-05 16:29:32,748 DEBUG message='OpenAI API response' path=https://api.openai.com/v1/audio/transcriptions processing_ms=1212 request_id=18199d1fde1e115d839409e7b675811a response_code=200
+2023-05-05 16:29:32,749 DEBUG Starting new HTTPS connection (1): aip.baidubce.com:443
+2023-05-05 16:29:33,120 DEBUG https://aip.baidubce.com:443 "POST /oauth/2.0/token?grant_type=client_credentials&client_id=wRwgGnzzBbHGVRuwCE6vQA9B&client_secret=ckVbpIuDu5p3aZFsxlwil23k7vXvUzkm HTTP/1.1" 200 None
+2023-05-05 16:29:33,123 DEBUG Starting new HTTPS connection (1): aip.baidubce.com:443
+2023-05-05 16:29:33,691 DEBUG https://aip.baidubce.com:443 "POST /rest/2.0/solution/v1/text_censor/v2/user_defined?access_token=24.3f8c545b300c113bae37d75046d431a3.2592000.1685867374.282335-28315217 HTTP/1.1" 200 86
+2023-05-05 16:32:50,532 INFO 127.0.0.1 - - [05/May/2023 16:32:50] "POST /hello-robot HTTP/1.1" 200 -
+2023-05-05 16:32:50,533 DEBUG Starting new HTTPS connection (1): aip.baidubce.com:443
+2023-05-05 16:32:50,764 DEBUG https://aip.baidubce.com:443 "POST /oauth/2.0/token?grant_type=client_credentials&client_id=wRwgGnzzBbHGVRuwCE6vQA9B&client_secret=ckVbpIuDu5p3aZFsxlwil23k7vXvUzkm HTTP/1.1" 200 None
+2023-05-05 16:32:50,767 DEBUG Starting new HTTPS connection (1): aip.baidubce.com:443
+2023-05-05 16:32:51,174 DEBUG https://aip.baidubce.com:443 "POST /rest/2.0/solution/v1/text_censor/v2/user_defined?access_token=24.ae5802db77ac682c8e9fee7f7a8083a6.2592000.1685867571.282335-28315217 HTTP/1.1" 200 86
+2023-05-05 16:32:51,188 INFO 127.0.0.1 - - [05/May/2023 16:32:51] "POST /hello-robot HTTP/1.1" 200 -
+2023-05-05 16:32:51,190 DEBUG Starting new HTTPS connection (1): aip.baidubce.com:443
+2023-05-05 16:32:51,352 DEBUG https://aip.baidubce.com:443 "POST /oauth/2.0/token?grant_type=client_credentials&client_id=wRwgGnzzBbHGVRuwCE6vQA9B&client_secret=ckVbpIuDu5p3aZFsxlwil23k7vXvUzkm HTTP/1.1" 200 None
+2023-05-05 16:32:51,355 DEBUG Starting new HTTPS connection (1): aip.baidubce.com:443
+2023-05-05 16:32:51,725 DEBUG https://aip.baidubce.com:443 "POST /rest/2.0/solution/v1/text_censor/v2/user_defined?access_token=24.ddd3a909e5ddce4027598711fb0583e0.2592000.1685867572.282335-28315217 HTTP/1.1" 200 86
+2023-05-05 16:33:53,884 INFO 127.0.0.1 - - [05/May/2023 16:33:53] "POST /hello-robot HTTP/1.1" 200 -
+2023-05-05 16:33:53,886 DEBUG Starting new HTTPS connection (1): aip.baidubce.com:443
+2023-05-05 16:33:54,106 DEBUG https://aip.baidubce.com:443 "POST /oauth/2.0/token?grant_type=client_credentials&client_id=wRwgGnzzBbHGVRuwCE6vQA9B&client_secret=ckVbpIuDu5p3aZFsxlwil23k7vXvUzkm HTTP/1.1" 200 None
+2023-05-05 16:33:54,109 DEBUG Starting new HTTPS connection (1): aip.baidubce.com:443
+2023-05-05 16:33:54,369 DEBUG https://aip.baidubce.com:443 "POST /rest/2.0/solution/v1/text_censor/v2/user_defined?access_token=24.ca4e0b6e1b240797900a64f61cdf4ca7.2592000.1685867635.282335-28315217 HTTP/1.1" 200 86
