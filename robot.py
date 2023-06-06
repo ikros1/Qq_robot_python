@@ -37,51 +37,6 @@ class Robot:
         t2.start()
         t.start()
 
-    def send_data(self, from_group, send_flag, temp_memory):
-        if from_group not in self.memory.group_memory:
-            self.memory.group_memory[from_group] = {}
-            self.memory.init_ikaros_memory(from_group)
-        self.memory.clear_memory(from_group)
-        for info in temp_memory:
-            if "风纪委员" in info["content"]:
-                send_flag = True
-                self.memory.group_memory[from_group]["assistant_memory"].append(info)
-            self.memory.group_memory[from_group]["group_memory"].append(info)
-
-        if send_flag:
-            ikaros_answer = ""
-            q = Queue()
-            t2 = threading.Thread(target=my_thread,
-                                  args=(q, self.memory.group_memory[from_group]))
-            t2.start()
-            warm_core_flag = False
-            success, key_words, answer_prompts = answer_loop(self.memory.group_memory[from_group])
-            while not warm_core_flag:
-                time.sleep(0.5)
-                if not q.empty():
-                    warm_core_flag, ikaros_answer = q.get()
-            if success:
-                print("不需要联网查询")
-                send_info = {'type': 'text',
-                             'data': {'text': str(ikaros_answer)}}
-                send_message_to_group(from_group, send_info)
-                self.memory.group_memory[from_group]["group_memory"].append(
-                    {"role": "assistant", "content": str(ikaros_answer)})
-                self.memory.group_memory[from_group]["assistant_memory"] = []
-                t1 = threading.Thread(target=send_file_in_japanese_to_group, args=(from_group, ikaros_answer, self.t_k))
-                t1.start()
-            else:
-                self.memory.group_memory[from_group]["group_memory"].append(
-                    {"role": "assistant", "content": str(ikaros_answer)})
-                print("需要联网查询")
-                send_info = {'type': 'text',
-                             'data': {'text': "您的需求需要联网查询，耗时较长，稍后为您展示查询结果"}}
-                send_message_to_group(from_group, send_info)
-                self.memory.group_memory[from_group] = answer_prompts
-                t2 = threading.Thread(target=fitch_info,
-                                      args=(key_words, self.memory.group_memory[from_group], from_group, []))
-                t2.start()
-
     def divide_data(self, data):
         temp_memory = data
         all_txt = []
@@ -124,4 +79,56 @@ class Robot:
                         all_txt.append(
                             {"role": "user", "content": "人物" + str(from_person) + "说 ：" + str(vo_info)})
 
-            self.send_data(from_group=from_group, send_flag=send_flag, temp_memory=all_txt)
+            self.store_message(from_group=from_group, temp_memory=all_txt)
+
+    def store_message(self, from_group, temp_memory):
+        send_flag = False
+        if from_group not in self.memory.group_memory:
+            self.memory.group_memory[from_group] = {}
+            self.memory.init_ikaros_memory(from_group)
+        self.memory.clear_memory(from_group)
+        for info in temp_memory:
+            if "风纪委员" in info["content"]:
+                send_flag = True
+                self.memory.group_memory[from_group]["assistant_memory"].append(info)
+            self.memory.group_memory[from_group]["group_memory"].append(info)
+        if send_flag:
+            self.message_answer(from_group)
+
+    def message_answer(self, from_group):
+        ikaros_answer = ""
+        q = Queue()
+        t2 = threading.Thread(target=my_thread,
+                              args=(q, self.memory.group_memory[from_group]))
+        t2.start()
+        warm_core_flag = False
+        if os.getenv("CONNECT_TO_INTERNET") == "True":
+            success, key_words, answer_prompts = answer_loop(self.memory.group_memory[from_group])
+        else:
+            success = True
+
+        while not warm_core_flag:
+            time.sleep(0.5)
+            if not q.empty():
+                warm_core_flag, ikaros_answer = q.get()
+        if success:
+            print("不需要联网查询")
+            send_info = {'type': 'text',
+                         'data': {'text': str(ikaros_answer)}}
+            send_message_to_group(from_group, send_info)
+            self.memory.group_memory[from_group]["group_memory"].append(
+                {"role": "assistant", "content": str(ikaros_answer)})
+            self.memory.group_memory[from_group]["assistant_memory"] = []
+            t1 = threading.Thread(target=send_file_in_japanese_to_group, args=(from_group, ikaros_answer, self.t_k))
+            t1.start()
+        else:
+            self.memory.group_memory[from_group]["group_memory"].append(
+                {"role": "assistant", "content": str(ikaros_answer)})
+            print("需要联网查询")
+            send_info = {'type': 'text',
+                         'data': {'text': "您的需求需要联网查询，耗时较长，稍后为您展示查询结果"}}
+            send_message_to_group(from_group, send_info)
+            self.memory.group_memory[from_group] = answer_prompts
+            t2 = threading.Thread(target=fitch_info,
+                                  args=(key_words, self.memory.group_memory[from_group], from_group, []))
+            t2.start()

@@ -156,6 +156,7 @@ def google_search_key(key_worlds):
     return info
 
 
+
 def answer_loop(group_memory):
     input_list = group_memory
     response_json_str = cool_core(input_list)
