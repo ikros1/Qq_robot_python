@@ -18,11 +18,17 @@ def google_search_to_json(input_keyword):
     print("input_keyword: " + input_keyword)
     url = "https://www.googleapis.com/customsearch/v1?key=" + GOOGLE_API_KEY + "&q=\"" + input_keyword + "\"&cx=" + CUSTOM_SEARCH_ENGINE_ID + "&start=1&num=5"
     # 发送请求
-    response = requests.request("GET", url)
+    try:
+        response = requests.request("GET", url)
+        print(url)
+    # 捕获异常，并在控制台打印
+    except requests.exceptions.RequestException as e:
+        print(e)
+        return False, []
     # 转为字典
     return_data = json.loads(response.text)
-    print("return_data: "+str(return_data))
-    return return_data
+    print("return_data: " + str(return_data))
+    return True, return_data
 
 
 def extract_info_from_json(json_data):
@@ -37,8 +43,6 @@ def extract_info_from_json(json_data):
         return True, info_list
 
 
-
-
 def split_text(text, chunk_size=1500):
     """
     Split a text into chunks of size chunk_size, trying to split near a sentence-ending punctuation.
@@ -48,7 +52,8 @@ def split_text(text, chunk_size=1500):
     """
     chunks = []
     while len(text) > chunk_size:
-        split_index = text.rfind(".", 1450, chunk_size)  # Look for the last sentence-ending punctuation before chunk_size.
+        split_index = text.rfind(".", 1450,
+                                 chunk_size)  # Look for the last sentence-ending punctuation before chunk_size.
         if split_index == -1:
             split_index = text.rfind("。", 1450, chunk_size)
         if split_index == -1:
@@ -70,3 +75,8 @@ def split_text(text, chunk_size=1500):
     chunks.append(text)  # Append the remaining text as the last chunk.
     return chunks
 
+
+# main函数
+if __name__ == '__main__':
+    kk, requests_str_2 = google_search_to_json("葫芦岛市今天天气如何")
+    print(extract_info_from_json(requests_str_2))

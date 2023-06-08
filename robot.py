@@ -2,12 +2,10 @@ import os
 import threading
 import time
 import urllib
-from queue import Queue
-
 import openai
 from dotenv import load_dotenv
 from pydub import AudioSegment
-from aicore import answer_loop, fitch_info, warm_core
+from aicore import warm_core, AnswerLoop
 from memory_data import memory
 from shen_all import receive_data
 from text_to_wav_interface import Core_tts_ika
@@ -18,17 +16,14 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-def my_thread(q, arg1):
-    results = warm_core(arg1)
-    q.put(results)
-
-
 class Robot:
     def __init__(self):
         self.t_k = Core_tts_ika()
         self.memory = memory()
         self.post_address = os.getenv("SERVER_PORT_ADRESS")
         self.qq_number = os.getenv("QQ_NUM")
+        self.web_answer_core = AnswerLoop()
+        self.memory.admin_authority(str(os.getenv("MANAGER_QQ")))
 
     def receive_data(self, data):
         # 下面代码用于新建线程
@@ -39,25 +34,27 @@ class Robot:
 
     def divide_data(self, data):
         temp_memory = data
+
         all_txt = []
-        send_flag = False
         if temp_memory["post_type"] == "message" and temp_memory["message_type"] == "group":
             from_group = temp_memory["group_id"]
-            from_person = temp_memory["user_id"]
+            if temp_memory["sender"]["user_id"]:
+                from_person = str(temp_memory["sender"]["user_id"])
+            else:
+                from_person = "0000000000"
             for txt in temp_memory["message"]:
                 if txt["type"] == "at":
                     if txt["data"]["qq"] != " ":
-                        all_txt.append(
-                            {"role": "user",
-                             "content": "人物" + str(from_person) + " @了人物 " + str(txt["data"]["qq"])})
                         if txt["data"]["qq"] == os.getenv("QQ_NUM"):
-                            send_flag = True
+                            all_txt.append({"from_person": from_person, "message": {"role": "user", "content": "人物" + str(from_person) + " @了人物风纪委员 "}})
+                        else:
+                            all_txt.append({"from_person": from_person, "message": {"role": "user", "content": "人物" + str(from_person) + " @了人物 " + str(txt["data"]["qq"])}})
+
                 if txt["type"] == "reply":
-                    all_txt.append({"role": "user", "content": "人物" + str(from_person) + " 回复了消息"})
+                    all_txt.append({"from_person": from_person, "message": {"role": "user", "content": "人物" + str(from_person) + " 回复了消息"}})
                 if txt["type"] == "text":
                     if txt["data"]["text"] != " ":
-                        all_txt.append(
-                            {"role": "user", "content": "人物" + str(from_person) + "说：" + str(txt["data"]["text"])})
+                        all_txt.append({"from_person": from_person, "message": {"role": "user", "content": "人物" + str(from_person) + "说：" + str(txt["data"]["text"])}})
 
                 if txt["type"] == "record":
                     url = txt["data"]["url"]
@@ -76,59 +73,72 @@ class Robot:
                     vo_info = voice_to_text(mp3_name)
 
                     if vo_info != " ":
-                        all_txt.append(
-                            {"role": "user", "content": "人物" + str(from_person) + "说 ：" + str(vo_info)})
+                        all_txt.append({"from_person": from_person, "message": {"role": "user", "content": "人物" + str(from_person) + "说 ：" + str(vo_info)}})
 
             self.store_message(from_group=from_group, temp_memory=all_txt)
 
     def store_message(self, from_group, temp_memory):
         send_flag = False
+        web_search_flag = False
+        master_flag = False
+        terminal = ""
+        from_person = ""
         if from_group not in self.memory.group_memory:
             self.memory.group_memory[from_group] = {}
             self.memory.init_ikaros_memory(from_group)
         self.memory.clear_memory(from_group)
         for info in temp_memory:
-            if "风纪委员" in info["content"]:
+            if not info["from_person"] in self.memory.authority:
+                self.memory.init_authority(info["from_person"])
+            if os.getenv("MANAGER_QQ") == info["from_person"] and "命令" in info["message"]["content"]:
+                master_flag = True
+                terminal = info["message"]["content"].replace("命令", "")
+            if "风纪委员" in info["message"]["content"]:
                 send_flag = True
-                self.memory.group_memory[from_group]["assistant_memory"].append(info)
-            self.memory.group_memory[from_group]["group_memory"].append(info)
+                from_person = info["from_person"]
+                self.memory.group_memory[from_group]["assistant_memory"].append(info["message"])
+            if "联网查询" in info["message"]["content"]:
+                web_search_flag = True
+                from_person = info["from_person"]
+            self.memory.group_memory[from_group]["group_memory"].append(info["message"])
         if send_flag:
-            self.message_answer(from_group)
+            self.message_answer(from_group, web_search_flag, master_flag, terminal, from_person)
 
-    def message_answer(self, from_group):
-        ikaros_answer = ""
-        q = Queue()
-        t2 = threading.Thread(target=my_thread,
-                              args=(q, self.memory.group_memory[from_group]))
-        t2.start()
-        warm_core_flag = False
-        if os.getenv("CONNECT_TO_INTERNET") == "True":
-            success, key_words, answer_prompts = answer_loop(self.memory.group_memory[from_group])
-        else:
-            success = True
+    def message_answer(self, from_group, web_search_flag, master_flag, terminal, from_person):
+        if os.getenv("CONNECT_TO_INTERNET") == "True" and web_search_flag and self.memory.authority[from_person]["use_ai_web_search"]:
+            def web_answer(group_memory, from_group_lan):
+                self.web_answer_core.data_set(group_memory, from_group_lan)
+                self.web_answer_core.run()
 
-        while not warm_core_flag:
-            time.sleep(0.5)
-            if not q.empty():
-                warm_core_flag, ikaros_answer = q.get()
-        if success:
-            print("不需要联网查询")
-            send_info = {'type': 'text',
-                         'data': {'text': str(ikaros_answer)}}
-            send_message_to_group(from_group, send_info)
-            self.memory.group_memory[from_group]["group_memory"].append(
-                {"role": "assistant", "content": str(ikaros_answer)})
-            self.memory.group_memory[from_group]["assistant_memory"] = []
-            t1 = threading.Thread(target=send_file_in_japanese_to_group, args=(from_group, ikaros_answer, self.t_k))
-            t1.start()
-        else:
-            self.memory.group_memory[from_group]["group_memory"].append(
-                {"role": "assistant", "content": str(ikaros_answer)})
-            print("需要联网查询")
-            send_info = {'type': 'text',
-                         'data': {'text': "您的需求需要联网查询，耗时较长，稍后为您展示查询结果"}}
-            send_message_to_group(from_group, send_info)
-            self.memory.group_memory[from_group] = answer_prompts
-            t2 = threading.Thread(target=fitch_info,
-                                  args=(key_words, self.memory.group_memory[from_group], from_group, []))
+            t2 = threading.Thread(target=web_answer, args=(self.memory.group_memory[from_group], from_group))
             t2.start()
+
+        else:
+            if web_search_flag and os.getenv("CONNECT_TO_INTERNET") == "False":
+                send_info = {'type': 'text', 'data': {'text': "您的需求需要联网查询，但是当前机器人关闭联网查询功能"}}
+                send_message_to_group(from_group, send_info)
+                return None
+            if web_search_flag and not self.memory.authority[from_person]["use_ai_web_search"]:
+                send_info = {'type': 'text', 'data': {'text': "您的需求需要联网查询，但您未获得联网查询权限"}}
+                send_message_to_group(from_group, send_info)
+                return None
+
+            def my_thread(group_memory, from_group_lan):
+                success, ikaros_answer = warm_core(group_memory)
+                if success:
+                    send_message_to_group(from_group_lan, {'type': 'text', 'data': {'text': str(ikaros_answer)}})
+                    self.memory.group_memory[from_group_lan]["group_memory"].append({"role": "assistant", "content": str(ikaros_answer)})
+                    if self.memory.authority[from_person]["use_ai_voice"]:
+                        t1 = threading.Thread(target=send_file_in_japanese_to_group,
+                                              args=(from_group_lan, ikaros_answer, self.t_k))
+                        t1.start()
+
+                else:
+                    send_message_to_group(from_group_lan, {'type': 'text', 'data': {'text': "机器人连接openai出现了一些问题，请联系管理员"}})
+            if self.memory.authority[from_person]["use_ai"]:
+                t2 = threading.Thread(target=my_thread,
+                                      args=(self.memory.group_memory[from_group], from_group))
+                t2.start()
+            else:
+                send_message_to_group(from_group, {'type': 'text', 'data': {'text': str(from_person)+"您的权限不足无法使用AI"}})
+

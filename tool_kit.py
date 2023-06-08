@@ -124,10 +124,7 @@ def is_similar(str1, str2):
     seq = difflib.SequenceMatcher(None, str1, str2)
     similarity_ratio = seq.ratio()
     print("相似度：" + str(similarity_ratio))
-    if similarity_ratio >= 0.7:
-        return True
-    else:
-        return False
+    return similarity_ratio
 
 
 def load_json_str(text):

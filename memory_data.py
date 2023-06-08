@@ -10,6 +10,7 @@ class memory:
         self.all_txt = []
         self.from_person = None
         self.send_flag = False
+        self.authority = {}
 
     def init_ikaros_memory(self, form_group):
         ikaros_memory_site = {"ikaros_id": [], "group_memory": [], "assistant_id": [], "assistant_memory": []}
@@ -18,6 +19,18 @@ class memory:
         for data in internet_analyze_front_prompt():
             ikaros_memory_site["assistant_id"].append(data)
         self.group_memory[form_group] = ikaros_memory_site
+
+    def init_authority(self, person):
+        self.authority[person] = {"use_ai": True, "use_ai_voice": False, "use_ai_web_search": False}
+
+    def admin_authority(self, person):
+        self.authority[person] = {"use_ai": True, "use_ai_voice": True, "use_ai_web_search": True}
+
+    def close_authority(self, person):
+        self.authority[person] = {"use_ai": False, "use_ai_voice": False, "use_ai_web_search": False}
+
+    def change_authority(self, person, key, value):
+        self.authority[person][key] = value
 
     def clear_memory(self, form_group):
         # 检测self.group_memory是否超过30条，如果超过20在while中清除{"ikaros_id": [], "group_memory": []}中key为“group_memory”最早的记录,并且初始化ikaros记忆

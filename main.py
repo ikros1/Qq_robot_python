@@ -1,12 +1,33 @@
-import logging
 import zipfile
 from datetime import datetime
 from flask import Response, make_response, jsonify, send_from_directory, request
 from flask import Flask
-from flask import render_template
-import time
 import json
 from robot import Robot
+import logging
+
+# 获取根日志记录器
+logger = logging.getLogger()
+logger.setLevel(logging.WARNING)  # 设置日志级别为WARNING或更高级别
+
+# 创建控制台日志处理程序
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.WARNING)  # 设置处理程序的日志级别为WARNING或更高级别
+
+# 创建日志格式器
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+# 将格式器添加到处理程序
+console_handler.setFormatter(formatter)
+
+# 将处理程序添加到日志记录器
+logger.addHandler(console_handler)
+
+# 示例日志输出
+logger.debug('This is a debug message')
+logger.info('This is an info message')
+logger.warning('This is a warning message')
+logger.error('This is an error message')
 
 
 def json_to_dict(json_str):
@@ -36,7 +57,7 @@ def hello_robot():
     # 接受前端传来的数据
     data = request.get_json()
     print(data)
-    #dict_data = json_to_dict(data)
+    # dict_data = json_to_dict(data)
     # 将数据传入机器人类中
     robot.receive_data(data)
     response = make_response('0', 200)
@@ -67,7 +88,3 @@ def download(filenames=None, dump_names=None):
     zip_file.close()
     return send_from_directory('downloaded_video_save_dir/files.zip',
                                "files.zip")
-
-
-
-
