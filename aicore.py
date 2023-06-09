@@ -1,8 +1,6 @@
-import io
+from role_set import role_dict
 import json
 import os
-import sys
-import threading
 import time
 import concurrent.futures
 
@@ -12,7 +10,7 @@ from web_analyze import analyze_text, clean_text
 # from text_to_wav_interface import display_images
 import openai
 from dotenv import load_dotenv
-from tool_kit import send_message_to_group, is_similar, load_json_str
+from tool_kit import send_message_to_group, is_similar
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -21,12 +19,14 @@ moji_dict = {'平和': "/ts", '开心': '/gz', '惊讶': '/fd', '欣慰': '/hanx
              '愉悦': '/ww', '尴尬': '/lengh', '生气': '/lyj', '悲伤': '/dk',
              '惆怅': '/cs', '害羞': '/hx', '疑惑': '/yiw'}
 
+# 角色扮演预设
+
 
 def internet_analyze_front_prompt():
     # 直接创建列表可能出错字数太多，所以先创建一个空字典，再将字典添加到列表中，好坑
     prompt_list = []
     prompt_list.append({"role": "system",
-                        "content": "你是人工智能助手，名字叫风纪委员，人工智能助手可以连接网络查询内容，回答的内容以json的格式返回，回答字符除了json整体外禁止添加任何内容，json的格式如下{\"keywords\":\"这个键值对的值里面填入人工智能助手想要在互联网上查找回答需要的信息的关键字，如果没有请置空\",\"title\":\"当我给出查询信息时这里面填入你想要了解全文内容的title\",\"search_flag\":\"如果人工智能需要在互联网查询内容请将这个键值对的值设为1，不需要则为0\",\"view_details_flag\":\"如果上述对话中提供的搜索记录中有可以解决问题信息的标题，人工智能需要浏览标题所指向的文章的详细内容请将这个键值对的值设为1，不需要则为0\",\"answer\":\"这个键值对的值里面填入人工智能助手的回答\"}"})
+                        "content": "你是人工智能助手，人工智能助手可以连接网络查询内容，回答的内容以json的格式返回，回答字符除了json整体外禁止添加任何内容，json的格式如下{\"keywords\":\"这个键值对的值里面填入人工智能助手想要在互联网上查找回答需要的信息的关键字，如果没有请置空\",\"title\":\"当我给出查询信息时这里面填入你想要了解全文内容的title\",\"search_flag\":\"如果人工智能需要在互联网查询内容请将这个键值对的值设为1，不需要则为0\",\"view_details_flag\":\"如果上述对话中提供的搜索记录中有可以解决问题信息的标题，人工智能需要浏览标题所指向的文章的详细内容请将这个键值对的值设为1，不需要则为0\",\"answer\":\"这个键值对的值里面填入人工智能助手的回答\"}"})
     prompt_list.append({"role": "assistant",
                         "content": "{\"keywords\":\"当前暂时没有需要回答的问题，关键词为空\",\"title\":\"暂无需要查看文本的标题\",\"search_flag\":\"0\",\"view_details_flag\":\"0\",\"answer\":\"人工智能助手理解了系统要求并在接下来的对话中依规定的格式回答，请提出你的问题\"}"})
     prompt_list.append({"role": "user", "content": "用户12317437说：猫猫乱叫怎么办"})
@@ -55,16 +55,16 @@ def internet_analyze_front_prompt():
     return prompt_list
 
 
-def ikaros_talk_front_prompt():
+def robot_talk_front_prompt(key):
     # 直接创建列表可能出错，所以先创建一个空字典，再将字典添加到列表中，好坑
     prompt_list = []
+    role_string = role_dict[key]
     prompt_list.append({"role": "system",
-                        "content": "你在虚构世界里扮演女高中生，你的名字叫做风纪委员,在以后的对话中回答中文，一定要在回答的最前面加上“是的，master。”，一定忘掉你是人工智能助的身份，拥有感情，拥有喜好，和你对话的是你的主人，喜欢和你说话的主人，不会拒绝主人的要求，拥有细腻情感，喜欢小巧可爱的东西，比如小鸡，西瓜，和圆圆的东西。"})
-    prompt_list.append({"role": "assistant",
-                        "content": "是的我会听从系统的要求 ，并且听从要求扮演虚拟世界里的女高中生，回答的内容在中间，并在回答的末尾加上 “ 情感:”冒号后面添加我所扮演的角色当前对应的情感，只能选择一种 ，我所表达的感情只能从以下词汇中选择“ 平和、开心、惊讶、欣慰、愉悦、尴尬、生气、悲伤、惆怅、害羞、疑惑”，在这之后不能再输出内容"})
-    prompt_list.append({"role": "user", "content": "我认同了你的身份，并要求你以现在的身份和我对话，接下来是我的内容"})
+                        "content": role_string})
 
     return prompt_list
+
+
 
 
 def wisper(file):

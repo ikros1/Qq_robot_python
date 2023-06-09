@@ -1,4 +1,4 @@
-from aicore import ikaros_talk_front_prompt, internet_analyze_front_prompt
+from aicore import robot_talk_front_prompt, internet_analyze_front_prompt
 
 
 class memory:
@@ -14,7 +14,15 @@ class memory:
 
     def init_ikaros_memory(self, form_group):
         ikaros_memory_site = {"ikaros_id": [], "group_memory": [], "assistant_id": [], "assistant_memory": []}
-        for data in ikaros_talk_front_prompt():
+        for data in robot_talk_front_prompt("风纪委员"):
+            ikaros_memory_site["ikaros_id"].append(data)
+        for data in internet_analyze_front_prompt():
+            ikaros_memory_site["assistant_id"].append(data)
+        self.group_memory[form_group] = ikaros_memory_site
+
+    def reload_robot_memory(self, form_group, robot_name):
+        ikaros_memory_site = {"ikaros_id": [], "group_memory": [], "assistant_id": [], "assistant_memory": []}
+        for data in robot_talk_front_prompt(robot_name):
             ikaros_memory_site["ikaros_id"].append(data)
         for data in internet_analyze_front_prompt():
             ikaros_memory_site["assistant_id"].append(data)

@@ -66,10 +66,13 @@ def get_text(text, hps, is_symbol):
 
 
 def create_tts_fn(model, hps, speaker_ids):
-    def tts_fn(text, speaker, language, speed):
+    def tts_fn(text, speaker, language, speed, voice_list):
         if language is not None:
             text = language_marks[language] + text + language_marks[language]
-        speaker_id = speaker_ids[speaker]
+        # speaker_id = speaker_ids[speaker]
+        for i in voice_list.keys():
+            if speaker in i:
+                speaker_id = voice_list[i]
         stn_tst, clean_text_s, clean_text_s_len = get_text(text, hps, False)
         with no_grad():
             x_tst = stn_tst.unsqueeze(0).to(device)
@@ -85,6 +88,7 @@ def create_tts_fn(model, hps, speaker_ids):
 
 class Core_tts_ika:
     def __init__(self):
+        self.voice_list = []
         parser = argparse.ArgumentParser()
         parser.add_argument("--model_dir", default="./G_latest.pth", help="directory to your fine-tuned model")
         parser.add_argument("--config_dir", default="./finetune_speaker.json",
@@ -105,10 +109,11 @@ class Core_tts_ika:
 
         _ = utils.load_checkpoint(args.model_dir, net_g, None)
         speaker_ids = hps.speakers
+        self.voice_list = speaker_ids
         self.tts_fn = create_tts_fn(net_g, hps, speaker_ids)
 
     def tts_vo(self, text, speaker, language, speed,file_path):
-        audio_data = self.tts_fn(text, speaker, language, speed)
+        audio_data = self.tts_fn(text, speaker, language, speed, self.voice_list)
         face_data = np.int16(audio_data / np.max(np.abs(audio_data)) * 170)
         face_data = face_data.astype(np.float64)
         face_data = np.abs(face_data)

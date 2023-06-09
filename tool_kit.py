@@ -82,16 +82,13 @@ def send_record_to_group(from_group, file_path):
     post_json(url, group_data)
 
 
-def send_file_in_japanese_to_group(from_group, chinese_txt, tts_core):
-    language = os.getenv("TTS_LANGUAGE")
+def send_file_in_japanese_to_group(from_group, chinese_txt, tts_core, language, speed, speaker):
     txt_str = ""
     if language == "日本語":
         txt_str = chinese_to_jp(chinese_txt)
         txt_str = txt_str.replace(" ", "").replace("\n", "")
     elif language == "简体中文":
         txt_str = chinese_txt.replace(" ", "").replace("\n", "")
-    speaker = os.getenv("TTS_SPEAKER")
-    speed = os.getenv("TTS_SPEED")
     # 将speed转换为float
     speed = float(speed)
     tts_front_path = os.getenv("TTS_FRONT_PATH")
