@@ -6,6 +6,7 @@ import openai
 from dotenv import load_dotenv
 from pydub import AudioSegment
 from aicore import warm_core, AnswerLoop
+from live2d import FaceDetection
 from memory_data import memory
 from shen_all import receive_data
 from text_to_wav_interface import Core_tts_ika
@@ -20,6 +21,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class Robot:
     def __init__(self):
+        self.face_detection = FaceDetection()
         self.robot_name_init = os.getenv("DEFAULT_ROLE")
         self.robot_voice_init = os.getenv("TTS_SPEAKER")
         self.robot_language_init = os.getenv("TTS_LANGUAGE")
@@ -31,10 +33,40 @@ class Robot:
         self.t_k = Core_tts_ika()
         self.memory = memory()
         self.robot_language_list = ["日本語", "简体中文"]
+        self.robot_voice_speed_list = {"低": "0.5", "中": "0.9", "高": "1.5"}
         self.post_address = os.getenv("SERVER_PORT_ADRESS")
         self.qq_number = os.getenv("QQ_NUM")
         self.web_answer_core = AnswerLoop()
         self.memory.admin_authority(str(os.getenv("MANAGER_QQ")))
+        self.terminal_list = [
+            "出示所有指令 参数: 无"
+            , "出示答题过程 参数: 无"
+            , "出示真名 参数: 无"
+            , "出示现在的声音 参数: 无"
+            , "出示声音列表 参数: 无"
+            , "出示语言列表 参数: 无"
+            , "出示角色列表 参数: 无"
+            , "管理员权限授予 参数：@想要授予权限的人:"
+            , "管理员权限收回 参数：@想要收回权限的人:"
+            , "语音权限授予 参数：@想要授予权限的人:"
+            , "语音权限收回 参数：@想要收回权限的人:"
+            , "重载语言 参数: 简体中文,日本語"
+            , "重载声音 参数: 声音列表中的英文名或中文名"
+            , "重载角色 参数: 角色列表中的名字"
+            , "重载速度 参数:低,中,高"
+
+        ]
+
+    def face_init(self):
+        self.face_detection.start()
+        t = threading.Thread(target=self.face_detection.face_look)
+        t.start()
+
+    def face_stop(self):
+        self.face_detection.flag = False
+
+    def face_data_return(self):
+        return self.face_detection.return_data()
 
     def receive_data(self, data):
         # 下面代码用于新建线程
@@ -47,6 +79,7 @@ class Robot:
         temp_memory = data
 
         all_txt = []
+        terminal_set_person_list = []
         if temp_memory["post_type"] == "message" and temp_memory["message_type"] == "group":
             from_group = temp_memory["group_id"]
             if from_group not in self.robot_name:
@@ -71,6 +104,7 @@ class Robot:
                                                                                                self.robot_name[
                                                                                                    from_group]}})
                         else:
+                            terminal_set_person_list.append(txt["data"]["qq"])
                             all_txt.append({"from_person": from_person, "message": {"role": "user",
                                                                                     "content": "人物" + str(
                                                                                         from_person) + " @了人物 " + str(
@@ -104,9 +138,10 @@ class Robot:
                         all_txt.append({"from_person": from_person, "message": {"role": "user", "content": "人物" + str(
                             from_person) + "说 ：" + str(vo_info)}})
 
-            self.store_message(from_group=from_group, temp_memory=all_txt)
+            self.store_message(from_group=from_group, temp_memory=all_txt,
+                               terminal_set_person_list=terminal_set_person_list)
 
-    def store_message(self, from_group, temp_memory):
+    def store_message(self, from_group, temp_memory, terminal_set_person_list):
         send_flag = False
         web_search_flag = False
         master_flag = False
@@ -119,7 +154,9 @@ class Robot:
         for info in temp_memory:
             if not info["from_person"] in self.memory.authority:
                 self.memory.init_authority(info["from_person"])
-            if os.getenv("MANAGER_QQ") == info["from_person"] and "命令" in info["message"]["content"]:
+                # self.memory.authority[info["from_person"]]["admin"] = True
+
+            if self.memory.authority[info["from_person"]]["admin"] and "命令" in info["message"]["content"]:
                 master_flag = True
                 send_flag = True
                 terminal = info["message"]["content"].replace("命令", "")
@@ -133,127 +170,252 @@ class Robot:
                 info["message"]["content"] = info["message"]["content"].replace(self.robot_name[from_group], "")
             self.memory.group_memory[from_group]["group_memory"].append(info["message"])
         if send_flag:
-            self.message_answer(from_group, web_search_flag, master_flag, terminal, from_person)
+            if master_flag:
+                print("收到命令")
+                self.terminal_answer(from_group, terminal, terminal_set_person_list)
+                return None
+            else:
+                self.message_answer(from_group, web_search_flag, master_flag, terminal, from_person)
+
+    def terminal_answer(self, from_group, terminal, person_list=None):
+        terminal_be_load = False
+        if "管理员权限授予" in terminal:
+            terminal_be_load = True
+            if person_list is None:
+                person_list = []
+            for to_person in person_list:
+                if to_person not in self.memory.authority:
+                    self.memory.init_authority(to_person)
+                self.memory.authority[to_person]["admin"] = True
+                send_info = {'type': 'text', 'data': {'text': "管理员权限已授予"}}
+                send_message_to_group(from_group, send_info)
+                send_info = {'type': 'at', 'data': {'qq': to_person}}
+                send_message_to_group(from_group, send_info)
+                return None
+            send_info = {'type': 'text', 'data': {'text': "管理员权限授予失败,请在参数中指定人物，@人物时不要使用加一和复制功能"}}
+            send_message_to_group(from_group, send_info)
+
+        if "管理员权限收回" in terminal:
+            terminal_be_load = True
+            if person_list is None:
+                person_list = []
+            for to_person in person_list:
+                if to_person not in self.memory.authority:
+                    self.memory.init_authority(to_person)
+                self.memory.authority[to_person]["admin"] = False
+                send_info = {'type': 'text', 'data': {'text': "管理员权限已收回"}}
+                send_message_to_group(from_group, send_info)
+                send_info = {'type': 'at', 'data': {'qq': to_person}}
+                send_message_to_group(from_group, send_info)
+                return None
+            send_info = {'type': 'text', 'data': {'text': "管理员权限收回失败,请在参数中指定人物，@人物时不要使用加一和复制功能"}}
+            send_message_to_group(from_group, send_info)
+
+        if "语音权限授予" in terminal:
+            terminal_be_load = True
+            if person_list is None:
+                person_list = []
+            for to_person in person_list:
+                if to_person not in self.memory.authority:
+                    self.memory.init_authority(to_person)
+                self.memory.authority[to_person]["use_ai_voice"] = True
+                send_info = {'type': 'text', 'data': {'text': "语音权限已授予"}}
+                send_message_to_group(from_group, send_info)
+                send_info = {'type': 'at', 'data': {'qq': to_person}}
+                send_message_to_group(from_group, send_info)
+
+        if "语音权限收回" in terminal:
+            terminal_be_load = True
+            if person_list is None:
+                person_list = []
+            for to_person in person_list:
+                if to_person not in self.memory.authority:
+                    self.memory.init_authority(to_person)
+                self.memory.authority[to_person]["use_ai_voice"] = False
+                send_info = {'type': 'text', 'data': {'text': "语音权限已收回"}}
+                send_message_to_group(from_group, send_info)
+                send_info = {'type': 'at', 'data': {'qq': to_person}}
+                send_message_to_group(from_group, send_info)
+
+        if "出示所有指令" in terminal:
+            terminal_be_load = True
+            terminal_list_str = "命令列表为： \n"
+            for key in self.terminal_list:
+                terminal_list_str = terminal_list_str + key + " \n"
+            send_info = {'type': 'text', 'data': {'text': terminal_list_str}}
+            send_message_to_group(from_group, send_info)
+        if "出示答题过程" in terminal:
+            terminal_be_load = True
+            send_message_dati(from_group)
+        if "出示声音列表" in terminal:
+            terminal_be_load = True
+            voice_list = self.t_k.voice_list.keys()
+            voice_list_str = "\n"
+            index = 0
+            for voice in voice_list:
+                voice = str(voice)
+                index = index + 1
+                voice_list_str = voice_list_str + voice + " \n"
+                if index == 10:
+                    send_info = {'type': 'text', 'data': {'text': "声音列表：" + voice_list_str}}
+                    send_message_to_group(from_group, send_info)
+                    index = 0
+                    voice_list_str = "\n"
+            send_info = {'type': 'text', 'data': {'text': "声音列表：" + voice_list_str}}
+            send_message_to_group(from_group, send_info)
+
+        if "出示角色列表" in terminal:
+            terminal_be_load = True
+            name_list = role_dict.keys()
+            name_list_str = "\n"
+            for name in name_list:
+                name_list_str = name_list_str + name + " \n"
+
+            send_info = {'type': 'text', 'data': {'text': "角色列表：" + name_list_str}}
+            send_message_to_group(from_group, send_info)
+
+        if "出示真名" in terminal:
+            terminal_be_load = True
+            send_info = {'type': 'text', 'data': {'text': "我是" + self.robot_name[from_group]}}
+            send_message_to_group(from_group, send_info)
+        if "出示现在声音" in terminal:
+            terminal_be_load = True
+            send_info = {'type': 'text', 'data': {
+                'text': "现在声音是：" + str(self.robot_voice[from_group]) + "\n现在的速度是：" + str(
+                    self.robot_speed[from_group]) + "\n现在的语言是：" + str(self.robot_language[from_group])}}
+            send_message_to_group(from_group, send_info)
+
+        if "重载语言" in terminal:
+            terminal_be_load = True
+            language_name = terminal.replace("重载语言", "")
+            for language in self.robot_language_list:
+                if language in language_name:
+                    language_name = language
+                    self.robot_language[from_group] = language_name
+                    send_info = {'type': 'text', 'data': {'text': "语言已经切换为：" + language_name}}
+                    send_message_to_group(from_group, send_info)
+                    return 0
+            send_info = {'type': 'text', 'data': {'text': "语言不存在：" + language_name}}
+            send_message_to_group(from_group, send_info)
+
+        if "重载声音" in terminal:
+            terminal_be_load = True
+            voice_name = terminal.replace("重载声音", "")
+            voice_name = voice_name.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "").replace(
+                "人物", "").replace("说", "").replace("1", "").replace("2", "").replace("3", "").replace("4",
+                                                                                                      "").replace(
+                "5", "").replace("6", "").replace("7", "").replace("8", "").replace("9", "").replace("0",
+                                                                                                     "").replace(
+                ":", "").replace("：", "").replace("。", "").replace(".", "").replace("，", "").replace(",",
+                                                                                                     "").replace(
+                "？", "").replace("?", "").replace("！", "").replace("!", "").replace("“", "").replace("”",
+                                                                                                     "").replace(
+                "\"", "").replace("；", "").replace(";", "").replace("（", "").replace("）", "").replace("(",
+                                                                                                      "").replace(
+                ")", "").replace("【", "").replace("】", "").replace("[", "").replace("]", "").replace("《",
+                                                                                                     "").replace(
+                "》", "").replace("<", "").replace(">", "").replace("、", "").replace("/", "").replace("\\",
+                                                                                                     "").replace(
+                "|", "").replace(" ", "")
+            voice_list = self.t_k.voice_list.keys()
+            print("简化后的声音名字：")
+            print(voice_name)
+
+            for voice in voice_list:
+                print(voice)
+                print("\n")
+                if voice_name in voice:
+                    self.robot_voice[from_group] = voice
+                    send_info = {'type': 'text', 'data': {'text': "重载成功"}}
+                    send_message_to_group(from_group, send_info)
+                    return None
+            send_info = {'type': 'text', 'data': {'text': "重载失败，没有找到该声音"}}
+            send_message_to_group(from_group, send_info)
+
+        if "重载角色" in terminal:
+            terminal_be_load = True
+            name_list = role_dict.keys()
+            for name in name_list:
+                if name in terminal:
+                    self.robot_name[from_group] = name
+                    send_info = {'type': 'text', 'data': {'text': "重载成功"}}
+                    send_message_to_group(from_group, send_info)
+                    self.memory.reload_robot_memory(from_group, self.robot_name[from_group])
+                    return None
+            send_info = {'type': 'text', 'data': {'text': "重载失败，没有找到该角色"}}
+            send_message_to_group(from_group, send_info)
+
+        if "重载速度" in terminal:
+            terminal_be_load = True
+            speed = terminal.replace("重载速度", "")
+            speed = speed.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "").replace("。",
+                                                                                                         "").replace(
+                ".", "").replace("，", "").replace(",", "").replace("？", "").replace("?", "").replace("！",
+                                                                                                     "").replace(
+                "!", "").replace("“", "").replace("”", "").replace("\"", "").replace("；", "").replace(";",
+                                                                                                      "").replace(
+                "（", "").replace("）", "").replace("(", "").replace(")", "").replace("【", "").replace("】",
+                                                                                                     "").replace(
+                "[", "").replace("]", "").replace("《", "").replace("》", "").replace("<", "").replace(">",
+                                                                                                     "").replace(
+                "、", "").replace("/", "").replace("\\", "").replace("|", "").replace(" ", "")
+            for speed_str in self.robot_voice_speed_list.keys():
+                if speed_str in speed:
+                    self.robot_speed[from_group] = self.robot_voice_speed_list[speed_str]
+                    send_info = {'type': 'text', 'data': {'text': "重载成功"}}
+                    send_message_to_group(from_group, send_info)
+                    return None
+            send_info = {'type': 'text', 'data': {'text': "重载失败"}}
+            send_message_to_group(from_group, send_info)
+
+        if not terminal_be_load:
+            terminal_list_str = "未捕捉到命令 \n 命令列表为： \n"
+            for key in self.terminal_list:
+                terminal_list_str = terminal_list_str + key + " \n"
+            send_info = {'type': 'text', 'data': {'text': terminal_list_str}}
+            send_message_to_group(from_group, send_info)
 
     def message_answer(self, from_group, web_search_flag, master_flag, terminal, from_person):
-        if master_flag:
-            print("收到命令")
-            if "出示答题过程" in terminal:
-                send_message_dati(from_group)
-            if "出示声音列表" in terminal:
-                voice_list = self.t_k.voice_list.keys()
-                voice_list_str = "\n"
-                index = 0
-                for voice in voice_list:
-                    voice = str(voice)
-                    index = index + 1
-                    voice_list_str = voice_list_str + voice + " \n"
-                    if index == 10:
-                        send_info = {'type': 'text', 'data': {'text': "声音列表：" + voice_list_str}}
-                        send_message_to_group(from_group, send_info)
-                        index = 0
-                        voice_list_str = "\n"
-                send_info = {'type': 'text', 'data': {'text': "声音列表：" + voice_list_str}}
-                send_message_to_group(from_group, send_info)
+        if os.getenv("CONNECT_TO_INTERNET") == "True" and web_search_flag and self.memory.authority[from_person]["use_ai_web_search"]:
+            def web_answer(group_memory, from_group_lan):
+                self.web_answer_core.data_set(group_memory, from_group_lan)
+                self.web_answer_core.run()
 
-            if "出示角色列表" in terminal:
-                name_list = role_dict.keys()
-                name_list_str = "\n"
-                for name in name_list:
-                    name_list_str = name_list_str + name + " \n"
-
-                send_info = {'type': 'text', 'data': {'text': "角色列表：" + name_list_str}}
-                send_message_to_group(from_group, send_info)
-
-            if "出示真名" in terminal:
-                send_info = {'type': 'text', 'data': {'text': "我是" + self.robot_name[from_group]}}
-                send_message_to_group(from_group, send_info)
-            if "出示现在声音" in terminal:
-                send_info = {'type': 'text', 'data': {'text': "现在声音是：" + str(self.robot_voice[from_group])+"\n现在的速度是："+str(self.robot_speed[from_group])+ "\n现在的语言是："+str(self.robot_language[from_group])}}
-                send_message_to_group(from_group, send_info)
-
-            if "重载语言" in terminal:
-                language_name = terminal.replace("重载语言", "")
-                for language in self.robot_language_list:
-                    if language in language_name:
-                        language_name = language
-                        self.robot_language[from_group] = language_name
-                        send_info = {'type': 'text', 'data': {'text': "语言已经切换为：" + language_name}}
-                        send_message_to_group(from_group, send_info)
-                        return 0
-                send_info = {'type': 'text', 'data': {'text': "语言不存在：" + language_name}}
-                send_message_to_group(from_group, send_info)
-
-
-            if "重载声音" in terminal:
-                voice_name = terminal.replace("重载声音", "")
-                voice_name = voice_name.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "").replace("人物", "").replace("说", "").replace("1", "").replace("2", "").replace("3", "").replace("4", "").replace("5", "").replace("6", "").replace("7", "").replace("8", "").replace("9", "").replace("0", "").replace(":","").replace("：","").replace("。","").replace(".","").replace("，","").replace(",","").replace("？","").replace("?","").replace("！","").replace("!","").replace("“","").replace("”","").replace("\"","").replace("；","").replace(";","").replace("（","").replace("）","").replace("(","").replace(")","").replace("【","").replace("】","").replace("[","").replace("]","").replace("《","").replace("》","").replace("<","").replace(">","").replace("、","").replace("/","").replace("\\","").replace("|","").replace(" ","")
-                voice_list = self.t_k.voice_list.keys()
-                print("简化后的声音名字：")
-                print(voice_name)
-
-                for voice in voice_list:
-                    print(voice)
-                    print("\n")
-                    if voice_name in voice:
-                        self.robot_voice[from_group] = voice
-                        send_info = {'type': 'text', 'data': {'text': "重载成功"}}
-                        send_message_to_group(from_group, send_info)
-                        return None
-                send_info = {'type': 'text', 'data': {'text': "重载失败，没有找到该声音"}}
-                send_message_to_group(from_group, send_info)
-
-            if "重载角色" in terminal:
-                name_list = role_dict.keys()
-                for name in name_list:
-                    if name in terminal:
-                        self.robot_name[from_group] = name
-                        send_info = {'type': 'text', 'data': {'text': "重载成功"}}
-                        send_message_to_group(from_group, send_info)
-                        self.memory.reload_robot_memory(from_group, self.robot_name[from_group])
-                        return None
-                send_info = {'type': 'text', 'data': {'text': "重载失败，没有找到该角色"}}
-                send_message_to_group(from_group, send_info)
+            t2 = threading.Thread(target=web_answer, args=(self.memory.group_memory[from_group], from_group))
+            t2.start()
 
         else:
-            if os.getenv("CONNECT_TO_INTERNET") == "True" and web_search_flag and self.memory.authority[from_person][
-                "use_ai_web_search"]:
-                def web_answer(group_memory, from_group_lan):
-                    self.web_answer_core.data_set(group_memory, from_group_lan)
-                    self.web_answer_core.run()
+            if web_search_flag and os.getenv("CONNECT_TO_INTERNET") == "False":
+                send_info = {'type': 'text', 'data': {'text': "您的需求需要联网查询，但是当前机器人关闭联网查询功能"}}
+                send_message_to_group(from_group, send_info)
+                return None
+            if web_search_flag and not self.memory.authority[from_person]["use_ai_web_search"]:
+                send_info = {'type': 'text', 'data': {'text': "您的需求需要联网查询，但您未获得联网查询权限"}}
+                send_message_to_group(from_group, send_info)
+                return None
 
-                t2 = threading.Thread(target=web_answer, args=(self.memory.group_memory[from_group], from_group))
-                t2.start()
+            def my_thread(group_memory, from_group_lan):
+                success, ikaros_answer = warm_core(group_memory)
+                if success:
+                    send_message_to_group(from_group_lan, {'type': 'text', 'data': {'text': str(ikaros_answer)}})
+                    self.memory.group_memory[from_group_lan]["group_memory"].append(
+                        {"role": "assistant", "content": str(ikaros_answer)})
+                    if self.memory.authority[from_person]["use_ai_voice"]:
+                        t1 = threading.Thread(target=send_file_in_japanese_to_group,
+                                              args=(from_group_lan, ikaros_answer, self.t_k,
+                                                    self.robot_language[from_group_lan],
+                                                    self.robot_speed[from_group_lan],
+                                                    self.robot_voice[from_group_lan]))
+                        t1.start()
 
-            else:
-                if web_search_flag and os.getenv("CONNECT_TO_INTERNET") == "False":
-                    send_info = {'type': 'text', 'data': {'text': "您的需求需要联网查询，但是当前机器人关闭联网查询功能"}}
-                    send_message_to_group(from_group, send_info)
-                    return None
-                if web_search_flag and not self.memory.authority[from_person]["use_ai_web_search"]:
-                    send_info = {'type': 'text', 'data': {'text': "您的需求需要联网查询，但您未获得联网查询权限"}}
-                    send_message_to_group(from_group, send_info)
-                    return None
-
-                def my_thread(group_memory, from_group_lan):
-                    success, ikaros_answer = warm_core(group_memory)
-                    if success:
-                        send_message_to_group(from_group_lan, {'type': 'text', 'data': {'text': str(ikaros_answer)}})
-                        self.memory.group_memory[from_group_lan]["group_memory"].append(
-                            {"role": "assistant", "content": str(ikaros_answer)})
-                        if self.memory.authority[from_person]["use_ai_voice"]:
-                            t1 = threading.Thread(target=send_file_in_japanese_to_group,
-                                                  args=(from_group_lan, ikaros_answer, self.t_k, self.robot_language[from_group_lan], self.robot_speed[from_group_lan], self.robot_voice[from_group_lan]))
-                            t1.start()
-
-                    else:
-                        send_message_to_group(from_group_lan,
-                                              {'type': 'text', 'data': {'text': "机器人连接openai出现了一些问题，请联系管理员"}})
-
-                if self.memory.authority[from_person]["use_ai"]:
-                    t2 = threading.Thread(target=my_thread,
-                                          args=(self.memory.group_memory[from_group], from_group))
-                    t2.start()
                 else:
-                    send_message_to_group(from_group,
-                                          {'type': 'text', 'data': {'text': str(from_person) + "您的权限不足无法使用AI"}})
+                    send_message_to_group(from_group_lan,
+                                          {'type': 'text', 'data': {'text': "机器人连接openai出现了一些问题，请联系管理员"}})
+
+            if self.memory.authority[from_person]["use_ai"]:
+                t2 = threading.Thread(target=my_thread,
+                                      args=(self.memory.group_memory[from_group], from_group))
+                t2.start()
+            else:
+                send_message_to_group(from_group,
+                                      {'type': 'text', 'data': {'text': str(from_person) + "您的权限不足无法使用AI"}})

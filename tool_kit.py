@@ -3,11 +3,15 @@ import difflib
 import random
 import re
 import time
-
+import sys
+import simpleaudio as sa
+import sounddevice as sd
+import soundfile as sf
 import openai
 import requests
 import json
 from dotenv import load_dotenv
+import wisper_to_text
 
 load_dotenv()
 
@@ -128,3 +132,18 @@ def load_json_str(text):
     json_pattern = re.compile(r'{.*?}')
     json_str = json_pattern.search(text).group()
     return json_str
+
+def listen_device_sound(time_out=5):
+    fs = 48000
+    duration = time_out
+    print("_____关键词监听_____")
+    myrecording = sd.rec(int(fs * duration), samplerate=fs, channels=1, dtype='int16')
+    sd.wait()
+    sf.write("./file/listen/output.wav", myrecording, fs)
+    print("_____关键词监听结束_____")
+    txt = wisper_to_text.voice_to_text("./file/listen/output.wav")
+    return txt
+
+# main函数
+if __name__ == '__main__':
+    listen_device_sound(10)

@@ -29,13 +29,13 @@ class memory:
         self.group_memory[form_group] = ikaros_memory_site
 
     def init_authority(self, person):
-        self.authority[person] = {"use_ai": True, "use_ai_voice": False, "use_ai_web_search": False}
+        self.authority[person] = {"use_ai": True, "use_ai_voice": True, "use_ai_web_search": False, "admin": False}
 
     def admin_authority(self, person):
-        self.authority[person] = {"use_ai": True, "use_ai_voice": True, "use_ai_web_search": True}
+        self.authority[person] = {"use_ai": True, "use_ai_voice": True, "use_ai_web_search": True, "admin": True}
 
     def close_authority(self, person):
-        self.authority[person] = {"use_ai": False, "use_ai_voice": False, "use_ai_web_search": False}
+        self.authority[person] = {"use_ai": False, "use_ai_voice": False, "use_ai_web_search": False, "admin": False}
 
     def change_authority(self, person, key, value):
         self.authority[person][key] = value

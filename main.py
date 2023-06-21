@@ -5,6 +5,7 @@ from flask import Flask
 import json
 from robot import Robot
 import logging
+from flask_cors import CORS
 
 # 获取根日志记录器
 logger = logging.getLogger()
@@ -23,12 +24,6 @@ console_handler.setFormatter(formatter)
 # 将处理程序添加到日志记录器
 logger.addHandler(console_handler)
 
-# 示例日志输出
-logger.debug('This is a debug message')
-logger.info('This is an info message')
-logger.warning('This is a warning message')
-logger.error('This is an error message')
-
 
 def json_to_dict(json_str):
     return json.loads(json_str)
@@ -40,6 +35,7 @@ logging.basicConfig(level=logging.DEBUG,
                     filemode='w')
 
 app = Flask(__name__)
+CORS(app)
 app.config['PROPAGATE_EXCEPTIONS'] = True
 app.config['SECRET_KEY'] = 'AASDFASDF'
 
@@ -88,3 +84,23 @@ def download(filenames=None, dump_names=None):
     zip_file.close()
     return send_from_directory('downloaded_video_save_dir/files.zip',
                                "files.zip")
+
+
+@app.route('/faceinit')
+def face_init():
+    robot.face_init()
+    response = make_response('0', 200)
+    return response
+
+
+@app.route('/facestop')
+def face_recognition():
+    robot.face_stop()
+    response = make_response('0', 200)
+    return response
+
+
+@app.route('/facedata')
+def face_data():
+    data = robot.face_data_return()
+    return jsonify(data)
