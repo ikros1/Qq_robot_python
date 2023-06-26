@@ -12,10 +12,51 @@ import requests
 import json
 from dotenv import load_dotenv
 import wisper_to_text
+from ocr.api_ppocr_json import OcrAPI
 
 load_dotenv()
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+
+def get_img_text(img):
+    ocr = OcrAPI("PaddleOCR-json/PaddleOCR_json.exe")
+    return_json = ocr.run(img)
+    # 加载json数据对象
+    json_data = return_json
+    # 获取json数据对象中的text字段
+    text_list = json_data['data']
+    text = ""
+    for text_obj in text_list:
+        text += text_obj['text']
+    print(text)
+    return text
+
+
+def get_img_from_url(url):
+    timestamp = int(time.time())
+    file_name = str(timestamp) + ".jpg"
+    # 设置本地保存路径
+    save_path = os.path.join("file/img_save/", file_name)
+
+    # 检查文件是否已存在
+    if os.path.exists(save_path):
+        print("文件已存在：", file_name)
+        return "../"+save_path
+
+    try:
+        # 发送HTTP请求下载图像
+        response = requests.get(url)
+        response.raise_for_status()
+        # 保存图像到本地
+        with open(save_path, "wb") as file:
+            file.write(response.content)
+        print("文件已保存：", save_path)
+        return "../" + save_path
+    except requests.exceptions.HTTPError as err:
+        print("HTTP错误：", err)
+    except Exception as err:
+        print("发生错误：", err)
 
 
 def chinese_to_jp(output):
@@ -133,6 +174,7 @@ def load_json_str(text):
     json_str = json_pattern.search(text).group()
     return json_str
 
+
 def listen_device_sound(time_out=5):
     fs = 48000
     duration = time_out
@@ -143,6 +185,7 @@ def listen_device_sound(time_out=5):
     print("_____关键词监听结束_____")
     txt = wisper_to_text.voice_to_text("./file/listen/output.wav")
     return txt
+
 
 # main函数
 if __name__ == '__main__':

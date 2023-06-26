@@ -19,7 +19,7 @@ def send_message(from_group, send_to_person, reason, send_flag, data):
         reason_txt = str(reason)
         # 去除所有中括号
         reason_txt = reason_txt.replace("[", "").replace("]", "")
-        moji_str = "内个内个，您的内容" + reason_txt + "，请，请注意一下（要求太严格的话，不要揍我 嘤嘤嘤）"
+        moji_str = "内个内个，您的内容" + reason_txt + "，风纪委员收下了哦，滑稽（偷偷分享给螺丝嘿嘿"
         reason_info = [{'type': 'at', 'data': {'qq': send_to_person}},
                        {'type': 'text', 'data': {'text': moji_str}}]
         reason_info2 = [{'type': 'at', 'data': {'qq': send_to_person}},
@@ -43,10 +43,6 @@ def receive_data(data):
         for txt in data["message"]:
             if txt["type"] == "text":
                 if txt["data"]["text"] != " ":
-                    if "入群答题方式" in txt["data"]["text"]:
-                        send_message_dati(from_group)
-            if txt["type"] == "text":
-                if txt["data"]["text"] != " ":
                     success, info = check_txt(txt["data"]["text"])
                     if not success:
                         print("审核文字失败")
@@ -56,6 +52,7 @@ def receive_data(data):
 
             if txt["type"] == "image":
                 success, info = check_img(txt["data"]["url"])
+
                 if not success:
                     # print("审核图片失败")
                     print(info)

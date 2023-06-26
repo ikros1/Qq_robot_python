@@ -5,12 +5,12 @@ import urllib
 import openai
 from dotenv import load_dotenv
 from pydub import AudioSegment
-from aicore import warm_core, AnswerLoop
+from aicore import warm_core, AnswerLoop, easy_core
 from live2d import FaceDetection
 from memory_data import memory
 from shen_all import receive_data
 from text_to_wav_interface import Core_tts_ika
-from tool_kit import send_message_to_group, send_file_in_japanese_to_group
+from tool_kit import send_message_to_group, send_file_in_japanese_to_group, get_img_from_url, get_img_text
 from wisper_to_text import voice_to_text
 from role_set import role_dict
 from tool_kit import send_message_dati
@@ -21,6 +21,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class Robot:
     def __init__(self):
+        self.robot_question_answer_flag = {}
         self.face_detection = FaceDetection()
         self.robot_name_init = os.getenv("DEFAULT_ROLE")
         self.robot_voice_init = os.getenv("TTS_SPEAKER")
@@ -54,6 +55,9 @@ class Robot:
             , "重载声音 参数: 声音列表中的英文名或中文名"
             , "重载角色 参数: 角色列表中的名字"
             , "重载速度 参数:低,中,高"
+            , "联网查询 参数: 任意文本，不能加命令二字"
+            , "答题姬启动"
+            , "答题姬停止"
 
         ]
 
@@ -90,11 +94,22 @@ class Robot:
                 self.robot_language[from_group] = self.robot_language_init
             if from_group not in self.robot_speed:
                 self.robot_speed[from_group] = self.robot_speed_init
+            if from_group not in self.robot_question_answer_flag:
+                self.robot_question_answer_flag[from_group] = False
             if temp_memory["sender"]["user_id"]:
                 from_person = str(temp_memory["sender"]["user_id"])
             else:
                 from_person = "0000000000"
             for txt in temp_memory["message"]:
+                if txt["type"] == "image":
+                    if self.robot_question_answer_flag[from_group]:
+                        img_file_name = get_img_from_url(txt["data"]["url"])
+                        all_txt.append(
+                            {"from_person": from_person, "answer_question_flag": True, "answer_question_txt_flag": False, "img_file_name": img_file_name,
+                             "message": {"role": "user",
+                                         "content": "人物" + str(
+                                             from_person) + " 提问了问题"}})
+
                 if txt["type"] == "at":
                     if txt["data"]["qq"] != " ":
                         if txt["data"]["qq"] == os.getenv("QQ_NUM"):
@@ -117,6 +132,13 @@ class Robot:
                     if txt["data"]["text"] != " ":
                         all_txt.append({"from_person": from_person, "message": {"role": "user", "content": "人物" + str(
                             from_person) + "说：" + str(txt["data"]["text"])}})
+                        if self.robot_question_answer_flag[from_group]:
+                            all_txt.append(
+                                {"from_person": from_person, "answer_question_flag": True, "answer_question_txt_flag": True, "img_file_name": txt["data"]["text"],
+                                 "message": {"role": "user",
+                                             "content": "人物" + str(
+                                                 from_person) + " 提问了问题"}})
+
 
                 if txt["type"] == "record":
                     url = txt["data"]["url"]
@@ -143,15 +165,27 @@ class Robot:
 
     def store_message(self, from_group, temp_memory, terminal_set_person_list):
         send_flag = False
+        answer_img_flag = False
         web_search_flag = False
+        answer_question_txt_flag = False
         master_flag = False
         terminal = ""
         from_person = ""
+        img_file_name = ""
         if from_group not in self.memory.group_memory:
             self.memory.group_memory[from_group] = {}
             self.memory.init_ikaros_memory(from_group)
         self.memory.clear_memory(from_group)
         for info in temp_memory:
+            # 检测info字典中是否有answer_question_flag键，如果没有则添加
+            if "answer_question_flag" in info:
+                if info["answer_question_flag"]:
+                    send_flag = True
+                    answer_img_flag = True
+                    from_person = info["from_person"]
+                    img_file_name = info["img_file_name"]
+                    answer_question_txt_flag = info["answer_question_txt_flag"]
+
             if not info["from_person"] in self.memory.authority:
                 self.memory.init_authority(info["from_person"])
                 # self.memory.authority[info["from_person"]]["admin"] = True
@@ -175,7 +209,13 @@ class Robot:
                 self.terminal_answer(from_group, terminal, terminal_set_person_list)
                 return None
             else:
-                self.message_answer(from_group, web_search_flag, master_flag, terminal, from_person)
+                if answer_img_flag:
+                    if answer_question_txt_flag:
+                        self.txt_answer(from_group, from_person, img_file_name)
+                    else:
+                        self.img_answer(from_group, from_person, img_file_name)
+                else:
+                    self.message_answer(from_group, web_search_flag, master_flag, terminal, from_person)
 
     def terminal_answer(self, from_group, terminal, person_list=None):
         terminal_be_load = False
@@ -345,6 +385,18 @@ class Robot:
             send_info = {'type': 'text', 'data': {'text': "重载失败，没有找到该角色"}}
             send_message_to_group(from_group, send_info)
 
+        if "答题姬启动" in terminal:
+            terminal_be_load = True
+            self.robot_question_answer_flag[from_group] = True
+            send_info = {'type': 'text', 'data': {'text': "答题姬启动成功"}}
+            send_message_to_group(from_group, send_info)
+
+        if "答题姬关闭" in terminal:
+            terminal_be_load = True
+            self.robot_question_answer_flag[from_group] = False
+            send_info = {'type': 'text', 'data': {'text': "答题姬关闭成功"}}
+            send_message_to_group(from_group, send_info)
+
         if "重载速度" in terminal:
             terminal_be_load = True
             speed = terminal.replace("重载速度", "")
@@ -375,8 +427,41 @@ class Robot:
             send_info = {'type': 'text', 'data': {'text': terminal_list_str}}
             send_message_to_group(from_group, send_info)
 
+    def txt_answer(self, from_group, from_person, txt):
+        success, answer = easy_core(txt)
+        if success:
+            print(from_person)
+            send_info = {'type': 'at', 'data': {'qq': str(from_person)}}
+            send_message_to_group(from_group, send_info)
+            send_info = {'type': 'text', 'data': {'text': answer}}
+            send_message_to_group(from_group, send_info)
+        else:
+            send_info = {'type': 'at', 'data': {'qq': from_person}}
+            send_message_to_group(from_group, send_info)
+            send_info = {'type': 'text', 'data': {'text': "回答失败"}}
+            send_message_to_group(from_group, send_info)
+
+
+    def img_answer(self, from_group, from_person, img_file_name):
+        img_text = get_img_text(img_file_name)
+        send_info = {'type': 'text', 'data': {'text': img_text}}
+        send_message_to_group(from_group, send_info)
+        success, answer = easy_core(img_text)
+        if success:
+            print(from_person)
+            send_info = {'type': 'at', 'data': {'qq': str(from_person)}}
+            send_message_to_group(from_group, send_info)
+            send_info = {'type': 'text', 'data': {'text': answer}}
+            send_message_to_group(from_group, send_info)
+        else:
+            send_info = {'type': 'at', 'data': {'qq': from_person}}
+            send_message_to_group(from_group, send_info)
+            send_info = {'type': 'text', 'data': {'text': "图片识别失败"}}
+            send_message_to_group(from_group, send_info)
+
     def message_answer(self, from_group, web_search_flag, master_flag, terminal, from_person):
-        if os.getenv("CONNECT_TO_INTERNET") == "True" and web_search_flag and self.memory.authority[from_person]["use_ai_web_search"]:
+        if os.getenv("CONNECT_TO_INTERNET") == "True" and web_search_flag and self.memory.authority[from_person][
+            "use_ai_web_search"]:
             def web_answer(group_memory, from_group_lan):
                 self.web_answer_core.data_set(group_memory, from_group_lan)
                 self.web_answer_core.run()

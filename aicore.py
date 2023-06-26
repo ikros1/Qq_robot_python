@@ -19,6 +19,7 @@ moji_dict = {'平和': "/ts", '开心': '/gz', '惊讶': '/fd', '欣慰': '/hanx
              '愉悦': '/ww', '尴尬': '/lengh', '生气': '/lyj', '悲伤': '/dk',
              '惆怅': '/cs', '害羞': '/hx', '疑惑': '/yiw'}
 
+
 # 角色扮演预设
 
 
@@ -51,7 +52,6 @@ def internet_analyze_front_prompt():
     prompt_list.append({"role": "assistant",
                         "content": "{\"keywords\":\"不需要关键词\",\"title\":\"无\",\"search_flag\":\"0\",\"view_details_flag\":\"0\",\"answer\":\"结合上文，猫乱叫的原因可能有多种情况，以下是一些常见的原因：饥饿或口渴：如果猫感到饥饿或口渴，它们可能会大声叫喊以吸引注意力并表达自己的需求。\"}"})
 
-
     return prompt_list
 
 
@@ -63,8 +63,6 @@ def robot_talk_front_prompt(key):
                         "content": role_string})
 
     return prompt_list
-
-
 
 
 def wisper(file):
@@ -84,6 +82,29 @@ def moji_find(txt):
         if emotions.find(emotion) != -1:
             return moji_dict[emotion]
     return moji_dict['平和']
+
+
+def easy_core(input_text):
+    prompt_list = []
+    prompt_list.append({"role": "system",
+                        "content": "你是人工智能助手，你需要回答试卷上的问题，下面为你需要回答的问题的试卷经过ocr扫描后的文本，你需要从中提取出其中的问题并回答问题,题目可能是个陈述句，可能丢失部分符号，你需要分析其中逻辑返回答案。"})
+    prompt_list.append({"role": "user",
+                        "content": "ocr扫描后详细信息为：" + input_text})
+    prompt_list.append({"role": "user",
+                        "content": "请回答试卷上的问题，先给出答案再解释答案的原因。"})
+
+    try:
+        response = openai.ChatCompletion.create(
+            model='gpt-3.5-turbo',
+            messages=prompt_list,
+            temperature=0
+        )
+    # 收集异常，打印异常
+    except Exception as e:
+        print(e)
+        return False, "openai连接失败"
+
+    return True, str(response.choices[0].message.content)
 
 
 def cool_core(input_list):

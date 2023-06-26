@@ -40,37 +40,129 @@ class FaceDetection:
     def return_data(self):
         return self.json_str
 
-    def face_data_update(self, img_width, img_height):
-        # 检查是否检测到人脸
-        if self.data['x']['nose'] == 0 and self.data['y']['nose'] == 0:
-            # 返回整个图像范围
-            x_min = 0
-            y_min = 0
-            x_max = img_width
-            y_max = img_height
-        else:
-            # 获取肩膀和鼻子的坐标
-            shoulder_x = self.data['x']['lshoulder'] + self.data['x']['rshoulder']
-            shoulder_y = self.data['y']['lshoulder'] + self.data['y']['rshoulder']
-            nose_x = self.data['x']['nose']
-            nose_y = self.data['y']['nose']
+    def face_data_update(self):
+        success = True
+        lshoulder_x = self.data['x']['lshoulder']
+        lshoulder_y = self.data['y']['lshoulder']
+        rshoulder_x = self.data['x']['rshoulder']
+        rshoulder_y = self.data['y']['rshoulder']
+        nose_x = self.data['x']['nose']
+        nose_y = self.data['y']['nose']
+        if nose_x < 1:
+            nose_x = 1
+            success = False
+        if nose_x > 99:
+            nose_x = 99
+            success = False
+        if nose_y < 1:
+            nose_y = 1
+            success = False
+        if nose_y > 99:
+            nose_y = 99
+            success = False
+        if lshoulder_x < 1:
+            lshoulder_x = 1
+            success = False
+        if lshoulder_x > 99:
+            lshoulder_x = 99
+            success = False
+        if lshoulder_y < 1:
+            lshoulder_y = 1
+            success = False
+        if lshoulder_y > 99:
+            lshoulder_y = 99
+            success = False
+        if rshoulder_x < 1:
+            rshoulder_x = 1
+            success = False
+        if rshoulder_x > 99:
+            rshoulder_x = 99
+            success = False
+        if rshoulder_y < 1:
+            rshoulder_y = 1
+            success = False
+        if rshoulder_y > 99:
+            rshoulder_y = 99
+            success = False
 
-            # 计算截取区域的坐标
-            x_min = int(min(max(0, shoulder_x), max(0, nose_x)) / 100 * img_width)  # 左上角x坐标
-            y_min = int(max(0, (nose_y - (shoulder_x - nose_x) * 2)) / 100 * img_height)  # 左上角y坐标
-            x_max = int(max(min(img_width, shoulder_x), min(img_width, nose_x)) / 100 * img_width)  # 右下角x坐标
-            y_max = int(min(img_height, nose_y) / 100 * img_height)  # 右下角y坐标
+        # nose_x 取小数点后两位
+        nose_x = int(nose_x) / 100
+        nose_y = int(nose_y) / 100
+        lshoulder_x = int(lshoulder_x) / 100
+        lshoulder_y = int(lshoulder_y) / 100
+        rshoulder_x = int(rshoulder_x) / 100
+        rshoulder_y = int(rshoulder_y) / 100
 
-        # 输出坐标
-        # print(f"({x_min}, {y_min}), ({x_max}, {y_max})")
-        print("ll" + str(self.data['x']['lshoulder']))
-        print("rr" + str(self.data['x']['rshoulder']))
-        return y_min, x_min, y_max, x_max
+        print("nose_x : ", nose_x, "nose_y : ", nose_y, "lshoulder_x : ", lshoulder_x, "lshoulder_y : ", lshoulder_y,
+              "rshoulder_x : ", rshoulder_x, "rshoulder_y : ", rshoulder_y)
+
+        return nose_x, nose_y, lshoulder_x, lshoulder_y, rshoulder_x, rshoulder_y, success
+
+    def crop_frame(self, frame, x_start, x_end, y_start, y_end):
+        height, width, _ = frame.shape
+        x_start = int(width * x_start)
+        x_end = int(width * x_end)
+        y_start = int(height * y_start)
+        y_end = int(height * y_end)
+        cropped_frame = frame[y_start:y_end, x_start:x_end]
+        return cropped_frame
+
+    def rotate_and_crop(self, image, nose_x, nose_y, lshoulder_x, lshoulder_y, rshoulder_x, rshoulder_y):
+        # 计算鼻子和肩膀的中心点坐标
+        jj = image
+        nose_center = (int(nose_x * image.shape[1]), int(nose_y * image.shape[0]))
+        print("nose_center : ", nose_center)
+        print("image.shape[1] : ", image.shape[1])
+        print("image.shape[0] : ", image.shape[0])
+        shoulder_center = (
+            int((lshoulder_x + rshoulder_x) / 2 * image.shape[1]),
+            int((lshoulder_y + rshoulder_y) / 2 * image.shape[0]))
+        print("shoulder_center : ", shoulder_center)
+        # 计算肩膀宽度
+        shoulder_width = int(
+            np.linalg.norm(np.array([lshoulder_x, lshoulder_y]) - np.array([rshoulder_x, rshoulder_y])) * image.shape[
+                1])
+        if shoulder_width < 0:
+            shoulder_width = -shoulder_width
+        # 计算旋转角度
+        angle = np.degrees(np.arctan2(nose_center[1] - shoulder_center[1], nose_center[0] - shoulder_center[0]))
+        angle = angle - 90
+        print("angle : ", angle)
+        # 计算鼻子中心点到肩膀的中心点的距离
+        distance = np.linalg.norm(np.array(nose_center) - np.array(shoulder_center))
+        # 执行旋转
+        M = cv2.getRotationMatrix2D(nose_center, angle, 1.0)
+        rotated_image = cv2.warpAffine(image, M, (image.shape[1], image.shape[0]), borderMode=cv2.BORDER_CONSTANT,
+                                       borderValue=(0, 0, 0))
+
+        # 计算旋转后的坐标
+        rotated_nose_center = np.dot(M, np.array([nose_center[0], nose_center[1], 1])).astype(int)
+        rotated_shoulder_center = np.dot(M, np.array([shoulder_center[0], shoulder_center[1], 1])).astype(int)
+        print("rotated_nose_center : ", rotated_nose_center)
+        print("rotated_shoulder_center : ", rotated_shoulder_center)
+        # 计算裁剪区域的边界
+        """
+        x1 = rotated_nose_center[0] - int(shoulder_width/2)
+        x2 = rotated_nose_center[0] + int(shoulder_width/2)
+        y1 = rotated_nose_center[1] - int(distance)
+        y2 = rotated_nose_center[1] + int(distance/2)"""
+        x1 = rotated_nose_center[0] - 100
+        x2 = rotated_nose_center[0] + 100
+        y1 = rotated_nose_center[1] - 100
+        y2 = rotated_nose_center[1] + 100
+        print("x1 : ", x1, "x2 : ", x2, "y1 : ", y1, "y2 : ", y2)
+
+        # 裁剪图像
+        cropped_image = rotated_image[y1:y2, x1:x2]
+        img_D = self.crop_frame(jj, nose_y-0.2, nose_y+0.2, nose_x-0.2, nose_x+0.2)
+        # return cropped_image
+        return img_D
 
     def face_look(self):
         while self.flag:
             time.sleep(0.2)
             img = self.video_handle.read()[1]
+            img = cv2.flip(img, 1)
 
             img_height, img_width, _ = img.shape
             tf_img = cv2.resize(img, (self.model_width, self.model_height))
@@ -98,20 +190,22 @@ class FaceDetection:
             # 创建保存图像的文件夹
             save_folder = 'C:\\Users\\ikaros\\Desktop\\Qq_robot_python\\face_id_dump'
             os.makedirs(save_folder, exist_ok=True)
-            y_min, x_min, y_max, x_max = self.face_data_update(img_width, img_height)
-
+            nose_x, nose_y, lshoulder_x, lshoulder_y, rshoulder_x, rshoulder_y, success_d = self.face_data_update()
+            if not success_d:
+                continue
             # 截取图像
-            face_image = img[y_min:y_max, x_min:x_max]
+            face_image = self.rotate_and_crop(img, nose_x, nose_y, lshoulder_x, lshoulder_y, rshoulder_x, rshoulder_y)
 
             # 生成保存路径和文件名
             timestamp = int(time.time())
             save_path = os.path.join(save_folder, f"face_{timestamp}.jpg")
 
             # 显示图像
-            cv2.imshow("face", face_image)
+            if face_image.shape[0] > 0 and face_image.shape[1] > 0:  # 检查图像尺寸是否大于0
+                cv2.imshow("face", face_image)
+                cv2.imwrite(save_path, face_image)
 
             # 保存图像
-            cv2.imwrite(save_path, face_image)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
