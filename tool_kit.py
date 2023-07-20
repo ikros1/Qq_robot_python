@@ -13,6 +13,7 @@ import json
 from dotenv import load_dotenv
 import wisper_to_text
 from ocr.api_ppocr_json import OcrAPI
+from text_to_wav_interface import Core_tts_ika
 
 load_dotenv()
 
@@ -189,4 +190,26 @@ def listen_device_sound(time_out=5):
 
 # main函数
 if __name__ == '__main__':
-    listen_device_sound(10)
+    chinese_txt = "大家好，我是胡来的螺丝，今天更新开发伊卡的视频，从零开始造伊卡天使，内容很杂，不定期更新，点个赞好吗，master"
+    txt_str = ""
+    speed = 1.0
+    speaker = "伊卡洛斯"
+    language = "简体中文"
+    language = "日本語"
+    if language == "日本語":
+        txt_str = chinese_to_jp(chinese_txt)
+        txt_str = txt_str.replace(" ", "").replace("\n", "")
+    elif language == "简体中文":
+        txt_str = chinese_txt.replace(" ", "").replace("\n", "")
+    # 将speed转换为float
+    speed = float(speed)
+    front_path = "for_my/data/"
+    # 通过时间戳赋予随机名字
+    file_name = str(int(time.time())) + str(random.randint(0, 1000))
+    file_back = ".wav"
+    file_name_all = front_path + file_name + file_back
+    send_file_name_all = file_name + file_back
+    # print(txt_str, speaker, language, speed, file_name_all)
+    tts_core = Core_tts_ika()
+    tts_core.tts_vo(text=txt_str, speaker=speaker, language=language, speed=speed, file_path=file_name_all)
+
